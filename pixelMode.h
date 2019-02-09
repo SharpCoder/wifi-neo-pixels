@@ -6,6 +6,7 @@
 class PixelMode {
     public:
         PixelMode() { }
+        virtual bool doUpdate(pixel_t* pixel, system_t* sys_config) { return this->doUpdate(pixel); };
         virtual bool doUpdate(pixel_t* pixel) { return false; };
 };
 

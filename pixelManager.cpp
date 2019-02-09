@@ -1,23 +1,39 @@
+#include "Arduino.h"
 #include "pixelManager.h"
 #include "defaultMode.cpp"
 #include "blinkMode.cpp"
+#include "rainbowMode.cpp"
+#include "pulseMode.cpp"
 
 PixelMode* DEFAULT_MODE = new DefaultMode();
 PixelMode* BLINK_MODE = new BlinkMode();
+PixelMode* RAINBOW_MODE = new RainbowMode();
+PixelMode* PULSE_MODE = new PulseMode();
 
 PixelManager::PixelManager(int PIXEL_COUNT, Adafruit_NeoPixel* neoPixels) {
     this->neoPixels = neoPixels;
     this->PIXEL_COUNT = PIXEL_COUNT;
     this->pixels = (pixel_t*)malloc(sizeof(pixel_t) * PIXEL_COUNT);
-    this->mode = BLINK_MODE;
-    this->changed = true; // update pixels immediately
+    this->systemConfiguration = new system_t();
+}
 
-    // Set some default values for our newly allocated pixels
-    for (int i = 0; i < PIXEL_COUNT; i++) {
-      this->setPixel(i, 98, 0, 226);
-      this->getPixel(i)->delay_max = 1000;
-      this->getPixel(i)->visible = true;
-    }
+void PixelManager::begin() {
+  
+  Serial.println("rebooted");
+  this->mode = PULSE_MODE;
+  this->changed = true; // update pixels immediately
+  // Set some default values for our newly allocated pixels
+  this->systemConfiguration->brightness = 255;
+  
+  for (int i = 0; i < PIXEL_COUNT; i++) {
+    pixel_t* pixel = this->getPixel(i);
+    pixel->index = i;
+    pixel->delay_max = 25;
+    pixel->visible = true;
+    pixel->PIXEL_COUNT = PIXEL_COUNT;
+    
+    this->setPixel(i, 15, 15, 180);
+  }
 }
 
 void PixelManager::render() {
@@ -28,10 +44,11 @@ void PixelManager::render() {
       } else {
         this->neoPixels->setPixelColor(index, this->neoPixels->Color(pixel->r, pixel->g, pixel->b));
       }
-      delay(1);
     }
-    
+
+    this->neoPixels->setBrightness(this->systemConfiguration->brightness);
     this->neoPixels->show();
+    delay(2);
 }
 
 pixel_t* PixelManager::getPixel(int index) {
@@ -73,12 +90,17 @@ void PixelManager::setMode(DisplayMode mode) {
 }
 
 void PixelManager::doUpdate(pixel_t* pixel) {
-    if (this->mode->doUpdate(pixel)) {
+    if (this->mode->doUpdate(pixel, this->systemConfiguration)) {
         this->changed = true;
     }
 }
 
 void PixelManager::loop() {
+
+    if (this->changed) {
+        this->changed = false;
+        this->render();
+    }
 
     // Iterate over each pixel, increment the delay counter 
     // and determine whether it needs updated or not.
@@ -92,11 +114,6 @@ void PixelManager::loop() {
             }
         }
     }
-
-    if (this->changed) {
-        this->changed = false;
-        this->render();
-    }
-
-    delay(1);
+    
+    delay(2);
 }

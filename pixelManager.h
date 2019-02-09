@@ -11,6 +11,7 @@ class PixelManager {
         PixelMode* mode;
         int PIXEL_COUNT;
         pixel_t* pixels;
+        system_t* systemConfiguration;
         bool changed;
         void render();
         void doUpdate(pixel_t* pixel);
@@ -21,6 +22,7 @@ class PixelManager {
         void setMode(DisplayMode mode);
         pixel_t* getPixel(int index);
         void loop();
+        void begin();
 };
 
 #endif

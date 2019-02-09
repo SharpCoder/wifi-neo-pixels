@@ -6,7 +6,7 @@ class DefaultMode : public PixelMode {
 
         }
         
-        bool doUpdate(pixel_t* pixel) {
+        bool doUpdate(pixel_t* pixel, system_t* system_configuration) {
             return false; // did not change
         }
 };

@@ -3,7 +3,15 @@
 
 typedef short color_t;
 
+typedef struct rgb {
+  color_t r;
+  color_t g;
+  color_t b;
+} rgb_t;
+
 typedef struct pixel {
+    unsigned int index, PIXEL_COUNT;
+    
     color_t r;
     color_t g;
     color_t b;
@@ -20,6 +28,13 @@ typedef struct pixel {
     long delay;
     long delay_max;
 } pixel_t;
+
+typedef struct system_config {
+  int r1, r2, r3;
+  bool b1;
+  float brightness;
+  bool visible;
+} system_t;
 
 typedef enum display_mode {
     Rainbow,
