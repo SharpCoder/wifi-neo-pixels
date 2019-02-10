@@ -39,14 +39,14 @@ class RainbowMode : public PixelMode {
           int i = pixel->index;
           int j = pixel->g3;
           
-          rgb_t rgb = this->Wheel((((i * 256) / (pixel->PIXEL_COUNT - 1)) + j) & 255);
+          rgb_t rgb = this->Wheel((((i * 255) / (pixel->PIXEL_COUNT - 1)) + j) & 255);
           
           pixel->r = rgb.r;
           pixel->g = rgb.g;
           pixel->b = rgb.b;
 
           j = j + 1;
-          if (j >= 256 * 5) {
+          if (j >= 255 * 5) {
             j = 0;
           }
           

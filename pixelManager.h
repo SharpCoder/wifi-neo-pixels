@@ -15,12 +15,16 @@ class PixelManager {
         bool changed;
         void render();
         void doUpdate(pixel_t* pixel);
+        long calcNextTime(long delay);
 
     public:
-        PixelManager(int PIXEL_COUNT, Adafruit_NeoPixel* neoPixels);
+        PixelManager(Adafruit_NeoPixel* neoPixels);
         void setPixel(int index, color_t r, color_t g, color_t b);
-        void setMode(DisplayMode mode);
+        void setPixelVisibility(int index, bool visible);
+        void setMode(display_mode mode);
+        void setBrightness(short brightness);
         pixel_t* getPixel(int index);
+        int getSize();
         void loop();
         void begin();
 };

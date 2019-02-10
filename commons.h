@@ -11,6 +11,8 @@ typedef struct rgb {
 
 typedef struct pixel {
     unsigned int index, PIXEL_COUNT;
+
+    unsigned int color, next_color;
     
     color_t r;
     color_t g;
@@ -25,8 +27,7 @@ typedef struct pixel {
     bool visible;
     int r1, r2, r3, g1, g2, g3, b1, b2, b3; // Random "registers"
     
-    long delay;
-    long delay_max;
+    long delay, delay_max, delay_target;
 } pixel_t;
 
 typedef struct system_config {
@@ -38,7 +39,8 @@ typedef struct system_config {
 
 typedef enum display_mode {
     Rainbow,
-    Default
-} DisplayMode;
+    Default,
+    Pulse
+} display_mode;
 
 #endif

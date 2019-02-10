@@ -8,7 +8,7 @@ class PulseMode : public PixelMode {
         }
         
         bool doUpdate(pixel_t* pixel, system_t* sys_config) {
-          const float delta = 0.2;
+          const float delta = 0.02;
           int b1 = sys_config->b1;
           if (b1 == false) {
             // Down
@@ -18,11 +18,11 @@ class PulseMode : public PixelMode {
             sys_config->brightness = sys_config->brightness + delta;
           }
 
-          if (sys_config->brightness <= 0) {
-            sys_config->brightness = 1;
+          if (sys_config->brightness <= 5) {
+            sys_config->brightness = 5 + delta;
             b1 = true;
-          } else if (sys_config->brightness > 255) {
-            sys_config->brightness = 255;
+          } else if (sys_config->brightness >= 250) {
+            sys_config->brightness = 250 - delta;
             b1 = false;
           }
           
