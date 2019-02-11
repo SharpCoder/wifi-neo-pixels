@@ -68,12 +68,11 @@ class Router {
           clr_c_buf();
           
           int spaces = 0, index;
-          char tmp = *(route_str + index++);;
-          String buf = "";
+          char tmp = *(route_str + index++);
 
           // count paths
           this->current_route.paths = this->count_paths(route_str);          
-          while (tmp != '\0') {
+          while (tmp != '\0' && path_index < MAXIMUM_COMPONENTS) {
             // Eat everything until the first space
             if (spaces == 0 && tmp != ' ') {
               // skip
@@ -83,8 +82,14 @@ class Router {
             } else if (tmp == '/') {
               // We have reached the end of a position.
               if (MAXIMUM_CHARACTERS * path_index == component_buffer_index) {
-                // We need to skip this.
+                // We need to skip this because the buffer is effectively empty.
+                // This would imply the slash we encountered is either at the beginning
+                // or is doubled up and, therfore, meaningless.
               } else {
+                // We have encountered the end of a component and all is good.
+                // Advance the array pointer such that it now starts at
+                // the beginning of our next buffer block, per the index of
+                // our path.
                 component_buffer_index = MAXIMUM_CHARACTERS * ++path_index;
               }
             } else {
