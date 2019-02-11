@@ -35,7 +35,7 @@ void PixelManager::begin() {
     pixel->visible = true;
     pixel->PIXEL_COUNT = PIXEL_COUNT;
     
-    this->setPixel(i, 200, 0, 175);
+    this->setPixel(i, 255, 255, 255);
   }
 }
 
@@ -45,13 +45,10 @@ void PixelManager::render() {
     pixel_t* pixel = this->getPixel(index);
     if (pixel->visible == false) {
       this->neoPixels->setPixelColor(index, this->neoPixels->Color(0, 0, 0));
-      shouldUpdate = true;
-      delay(1);
     } else {
       // compute the next color and only update if we are actually changing some aspect of it.
       pixel->next_color = this->neoPixels->Color(pixel->r, pixel->g, pixel->b);
       if (pixel->next_color != pixel->color || true) {
-        shouldUpdate = true;
         this->neoPixels->setPixelColor(index, pixel->next_color);
         pixel->color = pixel->next_color;
       }
@@ -111,6 +108,8 @@ void PixelManager::setMode(display_mode mode) {
     this->mode = RAINBOW_MODE;
   } else if (mode == Pulse) {
     this->mode = PULSE_MODE;
+  } else if (mode == Blink) {
+    this->mode = BLINK_MODE;
   } else {
     this->mode = DEFAULT_MODE;
   }

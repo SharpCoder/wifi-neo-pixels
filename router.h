@@ -1,14 +1,46 @@
 #ifndef __ROUTER_H_
 #define __ROUTER_H_
 
+#define MAXIMUM_COMPONENTS 10
+#define MAXIMUM_CHARACTERS 20
+
+// route_info
+// This is a struct which we ideally will only ever instantiate once.
+// It has two properties
+//  - paths         qty of components in a given route which we are parsing
+//  - components    actual route components.
+//
+// There is an important thing to note. Arbitrarily, this is only designed to
+// support, at most, 10 distinct routes within a given path. Each component
+// has a 20 character maximum.  An example of something which is NOT support
+//
+// /unfortunate-long-name/visibility/1 - first component exceeds 20 character limit!
+// 
+// So... just keep that in mind.
+
+int path_index = 0;
+int component_buffer_index = 0;
+char component_buffer[MAXIMUM_COMPONENTS * MAXIMUM_CHARACTERS];
+
 typedef struct route_info {
     int paths = 0;
-    String http_method;
-    String* components;
+    char* components[MAXIMUM_COMPONENTS];
 } route_info;
+
+// This method will clear the component buffer.
+void clr_c_buf() {
+  path_index = 0;
+  component_buffer_index = 0;
+  for (int i = 0; i < MAXIMUM_COMPONENTS * MAXIMUM_CHARACTERS; i++) {
+    *(component_buffer + i) = '\0';
+  }
+}
 
 class Router {
     private:
+        // only have 1 instance ever, for memory reasons.
+        route_info current_route;
+        
         // given a c-style string, determine the amount of paths
         // (forward-slashes) which exist.
         int count_paths(const char* route_str) {
@@ -25,50 +57,45 @@ class Router {
         }
 
     public:
-        route_info parse(String route) {
-            route_info result;
-            
-            const char* route_str = route.c_str();
-            int index = 0, component_index = 0, spaces = 0;
-            char tmp = *(route_str + index++);
-            String buf = "";
-
-            // count paths
-            result.paths = this->count_paths(route_str);
-            
-            // parse paths
-            result.components = new String[result.paths];
-            while (tmp != '\0') {
-                if (tmp == ' ') {
-                  // If it's the first space, then we know it is the http_method
-                  if (spaces++ == 0) {
-                    result.http_method = buf;
-                    buf = "";
-                  }
-                }
-                else if (spaces > 0 && tmp == '/') {
-                    if (buf.length() > 0 && component_index < result.paths) {
-                        *(result.components + component_index++) = buf;
-                    }
-                    buf = "";
-                } else {
-                    buf += tmp;
-                }
-
-                if (spaces == 2) break;
-                tmp = *(route_str + index++);
-            }
-            
-            if (buf.length() > 0 && component_index < result.paths) {
-                *(result.components + component_index++) = buf;
-            }
-
-            return result;
+      Router() {
+        this->current_route.paths = 0;
+        for (int i = 0; i < MAXIMUM_COMPONENTS; i++) {
+          this->current_route.components[i] = (component_buffer + (MAXIMUM_CHARACTERS * i));
         }
+      }
+      
+      route_info parse(char* route_str) {
+          clr_c_buf();
+          
+          int spaces = 0, index;
+          char tmp = *(route_str + index++);;
+          String buf = "";
 
-        void destroy(route_info info) {
-            free(info.components);
-        }
+          // count paths
+          this->current_route.paths = this->count_paths(route_str);          
+          while (tmp != '\0') {
+            // Eat everything until the first space
+            if (spaces == 0 && tmp != ' ') {
+              // skip
+            } else if (tmp == ' ') {
+              // We have encountered a space.
+              if (spaces++ != 0) break;
+            } else if (tmp == '/') {
+              // We have reached the end of a position.
+              if (MAXIMUM_CHARACTERS * path_index == component_buffer_index) {
+                // We need to skip this.
+              } else {
+                component_buffer_index = MAXIMUM_CHARACTERS * ++path_index;
+              }
+            } else {
+              // We are on a regular old character.
+              component_buffer[component_buffer_index++] = tmp;
+            }
+            tmp = *(route_str + index++);
+          }
+
+          return this->current_route;
+      }
 };
 
 #endif

@@ -40,6 +40,7 @@ typedef struct system_config {
 typedef enum display_mode {
     Rainbow,
     Default,
+    Blink,
     Pulse
 } display_mode;
 

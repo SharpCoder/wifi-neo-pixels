@@ -2,20 +2,26 @@
 // Configurable constants!!!
 // ***************
 #define SERVICE_PORT 80
-#define WIFI_SSID "<omitted>"
-#define WIFI_PASSWORD "<omitted>"
+#define WIFI_SSID "<redacted>"
+#define WIFI_PASSWORD "<redacted>"
 // ***************
 
 #ifndef __WEB_SERVER_H_
 #define __WEB_SERVER_H_
 
-#include "Arduino.h"
 #include <ESP8266WiFi.h>
+#include "Arduino.h"
 #include "pixelManager.h"
 #include "router.h"
 
+short packet_index = 0;
+char packet[80];
+char packet_tmp = '\0';
 WiFiServer http_server(SERVICE_PORT);
 Router router;
+
+int s_i = 0;
+short s_r = 0, s_g = 0, s_b = 0, s_bright = 0;
 
 class WebServer {
   private:
@@ -42,13 +48,20 @@ class WebServer {
         return;
       }
 
-      client.setTimeout(1000); // default is 1000
+      client.setTimeout(800); // default is 1000
       
       // If we reach here, we've got a new client connection!
-      String resource = client.readStringUntil('\r');
-      route_info rinf = router.parse(resource);
+      packet_index = 0;
+      while (client.available() && packet_index < 80) {
+        packet_tmp = (char)client.read();
+        if (packet_tmp == '\r' || packet_tmp == '\0') break;
+        packet[packet_index++] = packet_tmp;
+      }
+      
+      route_info rinf = router.parse(packet);
 
       // drain the buffer
+      // note: maybe don't want to do this? could be hacked with infinite buffer size :P
       while (client.available()) client.read();
 
       // respond with some nonsense
@@ -62,71 +75,73 @@ class WebServer {
       // /led/all/visibility/1
       // /system/brightness/250
       // /system/mode/Rainbow
-      if (resource.indexOf(F("/led/all/color/")) != -1) {
-        if (rinf.paths == 6) {
+      if (rinf.paths == 6) {
+        if (strcmp(rinf.components[0], "led") == 0 && 
+            strcmp(rinf.components[1], "all") == 0 &&
+            strcmp(rinf.components[2], "color") == 0) {
+              
           // good!
-          short r = atoi(rinf.components[3].c_str());
-          short g = atoi(rinf.components[4].c_str());
-          short b = atoi(rinf.components[5].c_str());
-
-          int i = 0;
+          s_r = atoi(rinf.components[3]);
+          s_g = atoi(rinf.components[4]);
+          s_b = atoi(rinf.components[5]);
+          s_i = 0;
           const int total = this->pixelManager->getSize();
-          for (; i < total; i++) {
-            pixelManager->setPixel(i, r, g, b);
+          for (; s_i < total; s_i++) {
+            this->pixelManager->setPixel(s_i, s_r, s_g, s_b);
           }
 
           // Set mode to DEFAULT
           this->pixelManager->setMode(Pulse);
+        } else if (strcmp(rinf.components[0], "led") == 0 &&
+                   strcmp(rinf.components[2], "color") == 0) {
+
+          // good!
+          s_i = atoi(rinf.components[1]);
+          s_r = atoi(rinf.components[3]);
+          s_g = atoi(rinf.components[4]);
+          s_b = atoi(rinf.components[5]);
+          this->pixelManager->setPixel(s_i, s_r, s_g, s_b);          
         }
-      } else if (resource.indexOf(F("/led/all/visibility/")) != -1) {
-        if (rinf.paths == 4) {
-          bool visible = rinf.components[3].equals("1");
-          int i = 0;
+      } else if (rinf.paths == 4) {
+        if (strcmp(rinf.components[0], "led") == 0 &&
+            strcmp(rinf.components[1], "all") == 0 &&
+            strcmp(rinf.components[2], "visibility") == 0) {
+          
+          // Good!
+          bool visible = atoi(rinf.components[3]) == 1;
           const int total = this->pixelManager->getSize();
-          for (; i < total; i++) {
-            this->pixelManager->setPixelVisibility(i,visible);
+          for (s_i = 0; s_i < total; s_i++) {
+           this->pixelManager->setPixelVisibility(s_i,visible);
           }
+        } else if (strcmp(rinf.components[0], "led") == 0 &&
+                   strcmp(rinf.components[2], "visibility") == 0) {
+
+          // good!
+          s_i = atoi(rinf.components[1]);
+          this->pixelManager->setPixelVisibility(s_i, atoi(rinf.components[3]) == 1);
         }
-      } else if (resource.indexOf(F("/system/brightness/")) != -1) {
-        if (rinf.paths == 3) {
-          // /system/brightness/130
-          short brightness = rinf.components[2].toInt();
-          this->pixelManager->setBrightness(brightness);
-        }
-      } else if (resource.indexOf(F("/system/mode/")) != -1) {
-        if (rinf.paths == 3) { 
+      } else if (rinf.paths == 3) {
+        if (strcmp(rinf.components[0], "system") == 0 &&
+            strcmp(rinf.components[1], "mode") == 0) {
+
+          // good!
           // /system/mode/Rainbow 
-          String system_mode = rinf.components[2];
-          if (system_mode.equals("Rainbow")) {
+          if (strcmp(rinf.components[2], "Rainbow") == 0) {
             this->pixelManager->setMode(Rainbow);
-          } else if (system_mode.equals("Pulse")) {
+          } else if (strcmp(rinf.components[2], "Pulse") == 0) {
             this->pixelManager->setMode(Pulse);
+          } else if (strcmp(rinf.components[2], "Blink") == 0) {
+            this->pixelManager->setMode(Blink);
           } else {
-            this->pixelManager->setMode(Default);
+            this->pixelManager->setMode(Default); 
           }
+        } else if (strcmp(rinf.components[0], "system") == 0 &&
+                   strcmp(rinf.components[1], "brightness") == 0) {
+          // good!
+          // /system/brightness/130
+          s_bright = atoi(rinf.components[2]);
+          this->pixelManager->setBrightness(s_bright);
         }
-      } else if (resource.indexOf(F("/led/")) != -1) {
-        // Individual lights
-        // - Supported Routes -
-        // /led/index/color/r/g/b
-        // /led/index/visibility/1 or 0
-        
-        if (rinf.paths > 3) {
-          // Check for known sub-route
-          String sub_route = rinf.components[2];
-          if (sub_route.equals("color") && rinf.paths == 6) {
-            int index = rinf.components[1].toInt();
-            short r = atoi(rinf.components[3].c_str());
-            short g = atoi(rinf.components[4].c_str());
-            short b = atoi(rinf.components[5].c_str());            
-            this->pixelManager->setPixel(index, r, g, b);
-          } else if (sub_route.equals("visibility") && rinf.paths == 4) {
-            int index = rinf.components[1].toInt();
-            short visibility = rinf.components[3].toInt();
-            this->pixelManager->setPixelVisibility(index, visibility == 1);
-          }
-        }
-        
       }
     }
 };
