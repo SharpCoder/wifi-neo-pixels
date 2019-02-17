@@ -6,7 +6,7 @@ class DefaultMode : public PixelMode {
 
         }
         
-        bool doUpdate(pixel_t* pixel, system_t* system_configuration) {
-            return true; // did not change
+        rgb_t doUpdate(pixel_t* pixel, system_t* system_configuration) {
+            return this->noop(pixel); // did not change
         }
 };

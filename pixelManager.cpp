@@ -4,11 +4,13 @@
 #include "blinkMode.cpp"
 #include "rainbowMode.cpp"
 #include "pulseMode.cpp"
+#include "candyMode.cpp"
 
 PixelMode* DEFAULT_MODE = new DefaultMode();
 PixelMode* BLINK_MODE = new BlinkMode();
 PixelMode* RAINBOW_MODE = new RainbowMode();
 PixelMode* PULSE_MODE = new PulseMode();
+PixelMode* CANDY_MODE = new CandyMode();
 
 PixelManager::PixelManager(Adafruit_NeoPixel* neoPixels) {
     this->neoPixels = neoPixels;
@@ -22,7 +24,7 @@ long PixelManager::calcNextTime(long delay) {
 }
 
 void PixelManager::begin() {
-  this->mode = DEFAULT_MODE;
+  this->mode = CANDY_MODE;
   this->changed = true; // update pixels immediately
   // Set some default values for our newly allocated pixels
   this->systemConfiguration->brightness = 255;
@@ -47,11 +49,8 @@ void PixelManager::render() {
       this->neoPixels->setPixelColor(index, this->neoPixels->Color(0, 0, 0));
     } else {
       // compute the next color and only update if we are actually changing some aspect of it.
-      pixel->next_color = this->neoPixels->Color(pixel->r, pixel->g, pixel->b);
-      if (pixel->next_color != pixel->color || true) {
-        this->neoPixels->setPixelColor(index, pixel->next_color);
-        pixel->color = pixel->next_color;
-      }
+      this->neoPixels->setPixelColor(index, pixel->next_color);
+      pixel->color = pixel->next_color;
     }
   }
   
@@ -82,6 +81,12 @@ void PixelManager::setPixelVisibility(int index, bool visible) {
   this->changed = true;
 }
 
+void PixelManager::setPixelDelay(int index, long delay_value) {
+  pixel_t* pixel = this->getPixel(index);
+  pixel->delay_max = delay_value;
+  this->changed = true;  
+}
+
 void PixelManager::setBrightness(short brightness) {
   this->systemConfiguration->brightness = brightness;
   this->changed = true;
@@ -110,6 +115,8 @@ void PixelManager::setMode(display_mode mode) {
     this->mode = PULSE_MODE;
   } else if (mode == Blink) {
     this->mode = BLINK_MODE;
+  } else if (mode == Candy) {
+    this->mode = CANDY_MODE;
   } else {
     this->mode = DEFAULT_MODE;
   }
@@ -117,19 +124,10 @@ void PixelManager::setMode(display_mode mode) {
   this->changed = true;
 }
 
-void PixelManager::doUpdate(pixel_t* pixel) {
-    if (this->mode->doUpdate(pixel, this->systemConfiguration)) {
-        this->changed = true;
-    }
-}
-
 void PixelManager::loop() {
-
-    if (this->changed) {
-        this->changed = false;
-        this->render();
-    }
-
+  
+    this->render();
+    
     // Iterate over each pixel, increment the delay counter 
     // and determine whether it needs updated or not.
     long ms = millis();
@@ -137,7 +135,8 @@ void PixelManager::loop() {
         pixel_t* pixel = this->getPixel(index);
         if (ms >= pixel->delay_target) {
             pixel->delay_target = this->calcNextTime(pixel->delay_max);
-            this->doUpdate(pixel);
+            rgb_t next_color = this->mode->doUpdate(pixel, this->systemConfiguration);
+            pixel->next_color = this->neoPixels->Color(next_color.r, next_color.g, next_color.b);
         }
     }
 }

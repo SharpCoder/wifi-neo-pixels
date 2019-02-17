@@ -41,6 +41,7 @@ typedef enum display_mode {
     Rainbow,
     Default,
     Blink,
+    Candy,
     Pulse
 } display_mode;
 

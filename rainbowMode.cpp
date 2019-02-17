@@ -35,22 +35,18 @@ class RainbowMode : public PixelMode {
 
         }
         
-        bool doUpdate(pixel_t* pixel) {
+        rgb_t doUpdate(pixel_t* pixel) {
           int i = pixel->index;
           int j = pixel->g3;
           
           rgb_t rgb = this->Wheel((((i * 255) / (pixel->PIXEL_COUNT - 1)) + j) & 255);
           
-          pixel->r = rgb.r;
-          pixel->g = rgb.g;
-          pixel->b = rgb.b;
-
           j = j + 1;
           if (j >= 255 * 5) {
             j = 0;
           }
           
           pixel->g3 = j;
-          return true;
+          return rgb;
         }
 };

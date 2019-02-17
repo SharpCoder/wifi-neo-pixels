@@ -4,6 +4,14 @@
 #define MAXIMUM_COMPONENTS 10
 #define MAXIMUM_CHARACTERS 20
 
+// These are some globals used to help reduce memory requirements.
+// by sharing this buffer, I was able to reduce memory footprint by
+// a crazy amount.
+int path_index = 0;
+int component_buffer_index = 0;
+char component_buffer[MAXIMUM_COMPONENTS * MAXIMUM_CHARACTERS];
+
+
 // route_info
 // This is a struct which we ideally will only ever instantiate once.
 // It has two properties
@@ -17,11 +25,6 @@
 // /unfortunate-long-name/visibility/1 - first component exceeds 20 character limit!
 // 
 // So... just keep that in mind.
-
-int path_index = 0;
-int component_buffer_index = 0;
-char component_buffer[MAXIMUM_COMPONENTS * MAXIMUM_CHARACTERS];
-
 typedef struct route_info {
     int paths = 0;
     char* components[MAXIMUM_COMPONENTS];
@@ -67,7 +70,7 @@ class Router {
       route_info parse(char* route_str) {
           clr_c_buf();
           
-          int spaces = 0, index;
+          int spaces = 0, index = 0;
           char tmp = *(route_str + index++);
 
           // count paths

@@ -21,6 +21,7 @@ class PixelManager {
         PixelManager(Adafruit_NeoPixel* neoPixels);
         void setPixel(int index, color_t r, color_t g, color_t b);
         void setPixelVisibility(int index, bool visible);
+        void setPixelDelay(int index, long delay_value);
         void setMode(display_mode mode);
         void setBrightness(short brightness);
         pixel_t* getPixel(int index);
