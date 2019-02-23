@@ -5,9 +5,6 @@
 
 class PixelMode {
     protected:
-      // This method will take a pixel input and return
-      // an rgb_t object which represents the current pixel state
-      // with no changes applied. Hence noop.
       rgb_t noop(pixel_t* pixel) {
           rgb_t noop;
           noop.r = pixel->r;

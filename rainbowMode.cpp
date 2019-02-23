@@ -36,10 +36,10 @@ class RainbowMode : public PixelMode {
         }
         
         rgb_t doUpdate(pixel_t* pixel) {
-          int i = pixel->index;
+          int i = pixel->normalized_index;
           int j = pixel->g3;
           
-          rgb_t rgb = this->Wheel((((i * 255) / (pixel->PIXEL_COUNT - 1)) + j) & 255);
+          rgb_t rgb = this->Wheel((((i * 255) / (pixel->normalized_pixel_count - 1)) + j) & 255);
           
           j = j + 1;
           if (j >= 255 * 5) {

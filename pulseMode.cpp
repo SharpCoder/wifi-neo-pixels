@@ -1,6 +1,9 @@
 #include "Arduino.h"
 #include "pixelMode.h"
 
+#define MIN 40
+#define MAX 255
+
 class PulseMode : public PixelMode {
     public:
         PulseMode() {
@@ -20,11 +23,11 @@ class PulseMode : public PixelMode {
             sys_config->brightness = sys_config->brightness + delta;
           }
 
-          if (sys_config->brightness <= 5) {
-            sys_config->brightness = 5 + delta;
+          if (sys_config->brightness <= MIN) {
+            sys_config->brightness = MIN + delta;
             b1 = true;
-          } else if (sys_config->brightness >= 250) {
-            sys_config->brightness = 250 - delta;
+          } else if (sys_config->brightness >= MAX) {
+            sys_config->brightness = MAX - delta;
             b1 = false;
           }
           

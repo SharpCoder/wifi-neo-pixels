@@ -18,6 +18,7 @@ short packet_index = 0;
 char packet[80];
 char packet_tmp = '\0';
 WiFiServer http_server(SERVICE_PORT);
+WiFiClient client;
 Router router;
 
 int s_i = 0;
@@ -38,15 +39,12 @@ class WebServer {
       while (WiFi.status() != WL_CONNECTED)  delay(500);
 
       http_server.begin();
-      String ipAddr = WiFi.localIP().toString();
-      Serial.println("Identified IP address as " + ipAddr);
+      Serial.println("Identified IP address as " + WiFi.localIP().toString());
     }
 
     void loop() {
-      WiFiClient client = http_server.available();
-      if (!client) {
-        return;
-      }
+      client = http_server.available();
+      if (!client) return;
 
       client.setTimeout(800); // default is 1000
       
@@ -58,7 +56,7 @@ class WebServer {
       // delay for reasons unknown. this appears to fix some kind of timeout problem.
       delay(10);
       
-      while (client.available() && packet_index < 80) {
+      while (client.connected() && client.available() && packet_index < 80) {
         packet_tmp = (char)client.read();
         Serial.print(packet_tmp);
         if (packet_tmp == '\r' || packet_tmp == '\0') break;
@@ -69,13 +67,11 @@ class WebServer {
       // note: maybe don't want to do this? could be hacked with infinite buffer size :P
       while (client.connected() && client.available()) {
         Serial.print((char)client.read());
-        client.read();
       }
       
       route_info rinf = router.parse(packet);
 
       // respond with some nonsense
-      client.print(F("HTTP/1.1 200 OK\r\nContent-Type: application/json;\r\n\r\n{\"alive\":\"true\"}\r\n"));
       delay(1);
       
       if (client.connected()) {
@@ -85,11 +81,11 @@ class WebServer {
       Serial.println("[Client Disconnected]");
       
       // actually process request
-      Serial.print("request incoming with ");
-      Serial.print(rinf.paths);
-      Serial.println(" paths");
-      Serial.println(packet);
-      
+//      Serial.print("request incoming with ");
+//      Serial.print(rinf.paths);
+//      Serial.println(" paths");
+//      Serial.println(packet);
+
       // /led/index/color/r/g/b
       // /led/index/visibility/1
       // /led/all/color/r/g/b
@@ -107,10 +103,13 @@ class WebServer {
           s_g = atoi(rinf.components[4]);
           s_b = atoi(rinf.components[5]);
           s_i = 0;
-          const int total = this->pixelManager->getSize();
-          for (; s_i < total; s_i++) {
+          
+          for (; s_i < this->pixelManager->getSize(); s_i++) {
             this->pixelManager->setPixel(s_i, s_r, s_g, s_b);
           }
+
+          // Set mode to DEFAULT
+//          this->pixelManager->setMode(Pulse);
         } else if (strcmp(rinf.components[0], "led") == 0 &&
                    strcmp(rinf.components[2], "color") == 0) {
 
@@ -128,8 +127,7 @@ class WebServer {
           
           // Good!
           bool visible = atoi(rinf.components[3]) == 1;
-          const int total = this->pixelManager->getSize();
-          for (s_i = 0; s_i < total; s_i++) {
+          for (s_i = 0; s_i < this->pixelManager->getSize(); s_i++) {
            this->pixelManager->setPixelVisibility(s_i,visible);
           }
         } else if (strcmp(rinf.components[0], "led") == 0 &&

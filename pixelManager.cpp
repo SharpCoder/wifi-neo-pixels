@@ -12,6 +12,8 @@ PixelMode* RAINBOW_MODE = new RainbowMode();
 PixelMode* PULSE_MODE = new PulseMode();
 PixelMode* CANDY_MODE = new CandyMode();
 
+unsigned int loop_pixel_index = 0;
+
 PixelManager::PixelManager(Adafruit_NeoPixel* neoPixels) {
     this->neoPixels = neoPixels;
     this->PIXEL_COUNT = neoPixels->numPixels();
@@ -24,7 +26,7 @@ long PixelManager::calcNextTime(long delay) {
 }
 
 void PixelManager::begin() {
-  this->mode = CANDY_MODE;
+  this->mode = PULSE_MODE;
   this->changed = true; // update pixels immediately
   // Set some default values for our newly allocated pixels
   this->systemConfiguration->brightness = 255;
@@ -36,8 +38,10 @@ void PixelManager::begin() {
     pixel->delay_max = 35;
     pixel->visible = true;
     pixel->PIXEL_COUNT = PIXEL_COUNT;
+    pixel->normalized_pixel_count = PIXEL_COUNT / PIXELS_PER_HEXAGON;
+    pixel->normalized_index = (unsigned int)(i / PIXELS_PER_HEXAGON);
     
-    this->setPixel(i, 255, 255, 255);
+    this->setPixel(i, 10, 186, 181);
   }
 }
 
@@ -125,18 +129,28 @@ void PixelManager::setMode(display_mode mode) {
 }
 
 void PixelManager::loop() {
-  
-    this->render();
+
+    if (loop_pixel_index == 0) {
+//      this->render();
+    }
     
     // Iterate over each pixel, increment the delay counter 
     // and determine whether it needs updated or not.
     long ms = millis();
-    for (int index = 0; index < this->PIXEL_COUNT; index++) {
-        pixel_t* pixel = this->getPixel(index);
-        if (ms >= pixel->delay_target) {
-            pixel->delay_target = this->calcNextTime(pixel->delay_max);
-            rgb_t next_color = this->mode->doUpdate(pixel, this->systemConfiguration);
-            pixel->next_color = this->neoPixels->Color(next_color.r, next_color.g, next_color.b);
-        }
+
+    // Render 3 pixels at a time
+    for (unsigned int idx = 0; idx < PIXELS_PER_HEXAGON; idx++) {
+      unsigned int index = loop_pixel_index++;
+      if (index > this->PIXEL_COUNT - 1) {
+        index = 0;
+        loop_pixel_index = 0;
+        this->render();
+      }
+      pixel_t* pixel = this->getPixel(index);
+      if (ms >= pixel->delay_target) {
+          pixel->delay_target = this->calcNextTime(pixel->delay_max);
+          rgb_t next_color = this->mode->doUpdate(pixel, this->systemConfiguration);
+          pixel->next_color = this->neoPixels->Color(next_color.r, next_color.g, next_color.b);
+      }
     }
 }

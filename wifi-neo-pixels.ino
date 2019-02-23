@@ -35,4 +35,5 @@ void loop() {
   // put your main code here, to run repeatedly:
   pixelManager.loop();
   server.loop();
+  delay(1);
 }

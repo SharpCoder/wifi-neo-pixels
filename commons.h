@@ -1,8 +1,11 @@
 #ifndef __PIXEL_COMMONS_H_
 #define __PIXEL_COMMONS_H_
 
-typedef short color_t;
+#define NUM_LEDS 50
+#define DATA_PIN 5
+#define PIXELS_PER_HEXAGON 3
 
+typedef short color_t;
 typedef struct rgb {
   color_t r;
   color_t g;
@@ -10,8 +13,7 @@ typedef struct rgb {
 } rgb_t;
 
 typedef struct pixel {
-    unsigned int index, PIXEL_COUNT;
-
+    unsigned int index, PIXEL_COUNT, normalized_index, normalized_pixel_count;
     unsigned int color, next_color;
     
     color_t r;
